@@ -6,7 +6,6 @@ import com.example.demo.services.JwtService;
 import com.example.demo.dtos.CustomerLoginDto;
 import com.example.demo.models.CustomerLogin;
 import com.example.demo.services.CustomerLoginService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +25,7 @@ public class AuthenticationController {
     @PostMapping("/auth/create")
     public ResponseEntity<JwtTokenDto> saveCustomer(@RequestBody CustomerLogin customerLogin) {
         CustomerLoginDto savedCustomerLogin = customerLoginService.createCustomerLogin(customerLogin);
-        JwtTokenDto jwtTokenDto= jwtService.constructToken(savedCustomerLogin);
+        JwtTokenDto jwtTokenDto = jwtService.constructToken(savedCustomerLogin);
 
         return ResponseEntity.ok(jwtTokenDto);
     }
