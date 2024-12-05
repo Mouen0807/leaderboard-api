@@ -1,7 +1,6 @@
 package com.example.demo.dtos;
 
 import com.example.demo.models.CustomerDetails;
-import com.example.demo.models.Role;
 import lombok.*;
 
 import java.util.List;

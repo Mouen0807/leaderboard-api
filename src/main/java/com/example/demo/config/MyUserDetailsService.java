@@ -29,7 +29,7 @@ public class MyUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<CustomerLogin> customerLogin = customerLoginRepository.findById(username);
+        Optional<CustomerLogin> customerLogin = Optional.of(customerLoginRepository.findByLogin(username));
 
         return new User(customerLogin.get().getLogin(),
                 customerLogin.get().getPassword(),

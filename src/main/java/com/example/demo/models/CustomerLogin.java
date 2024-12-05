@@ -1,5 +1,7 @@
 package com.example.demo.models;
 
+import java.util.UUID;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,7 +17,10 @@ import lombok.Setter;
 @Table(name = "customerLogin")
 public class CustomerLogin{
     @Id
-    @Column(nullable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    @Column(unique=true,nullable = false)
     private String login;
 
     @Column(nullable = false)

@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class JwtService {
     private long refreshExpiration;
 
     private final JwtTokenMapperImpl jwtTokenMapperImpl = new JwtTokenMapperImpl();
+    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
     public String extractLogin(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -45,6 +48,8 @@ public class JwtService {
     }
 
     public JwtTokenDto constructToken(CustomerLoginDto customerLoginDto){
+        logger.debug("Start token creation for login {} ", customerLoginDto.getLogin());
+
         JwtToken jwtToken = new JwtToken();
         Map<String, Object> extraClaims = new HashMap<String,Object>();
 
@@ -53,6 +58,8 @@ public class JwtService {
 
         jwtToken.setAccessToken(generateToken(extraClaims,customerLoginDto));
         jwtToken.setRefreshToken(generateRefreshToken(customerLoginDto));
+
+        logger.debug("Token created for login {} ", customerLoginDto.getLogin());
 
         return jwtTokenMapperImpl.convertToDto(jwtToken);
     }
@@ -117,7 +124,6 @@ public class JwtService {
     }
 
     private Key getSignInKey() {
-        System.out.println("TEST " +  refreshExpiration);
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
