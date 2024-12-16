@@ -1,6 +1,8 @@
 package com.example.demo.config;
 
 import com.example.demo.services.JwtService;
+import com.example.demo.services.RedisCacheService;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final MyUserDetailsService myUserDetailsService;
+    private final RedisCacheService redisCacheService;
 
     @Override
     protected void doFilterInternal(
@@ -41,12 +44,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
+
+        String tokenId = jwtService.extractId(jwt);
+            
+        // checking in redis cache for token revokation
+        if(redisCacheService.isTokenRevoked(tokenId)){
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String userLogin = jwtService.extractLogin(jwt);
 
         if (userLogin!= null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.myUserDetailsService.loadUserByUsername(userLogin);
 
-            // TO DO add checking for token revokation
+        
             if (jwtService.isTokenValid(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails.getUsername(),

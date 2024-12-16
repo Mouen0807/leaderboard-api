@@ -1,6 +1,5 @@
 package com.example.demo.models;
 
-import com.example.demo.models.Permission;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -20,10 +20,13 @@ public class CustomerLoginMapperImpl implements CustomerLoginMapper {
                 .collect(Collectors.toList());
 
         CustomerLoginDto customerLoginDto = CustomerLoginDto.builder()
+                .id(customerLogin.getId().toString())
                 .login(customerLogin.getLogin())
                 .role(customerLogin.getRole().getName())
                 .customerDetails(customerLogin.getCustomerDetails())
                 .permissions(permissionNames)
+                .createdAt(customerLogin.getCreatedAt().toString())
+                .updatedAt(customerLogin.getUpdatedAt().toString())
                 .build();
 
         return customerLoginDto;

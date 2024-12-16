@@ -1,5 +1,11 @@
 package com.example.demo.models;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,7 +21,10 @@ import lombok.Setter;
 @Table(name = "customerLogin")
 public class CustomerLogin{
     @Id
-    @Column(nullable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    @Column(unique=true,nullable = false)
     private String login;
 
     @Column(nullable = false)
@@ -26,6 +35,12 @@ public class CustomerLogin{
 
     @OneToOne(cascade = CascadeType.ALL)
     private Role role;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+    
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @Override
     public String toString() {
