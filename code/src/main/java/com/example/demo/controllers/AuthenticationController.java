@@ -38,88 +38,93 @@ public class AuthenticationController {
     @PostMapping("/auth/create")
     public ResponseEntity<?> saveCustomer(@RequestBody CustomerLogin customerLogin) {
         logger.info("Attempt to create customer with login: {} ", customerLogin.getLogin());
-        
         Optional<CustomerLoginDto> savedCustomerLoginDto = customerLoginService.createCustomerLogin(customerLogin);
         
         if(!savedCustomerLoginDto.isPresent()){
-            logger.warn("Customer not created because login {} alread exists", customerLogin.getLogin());
             ApiResponse apiResponse = ApiResponse.builder()
                                         .code(HttpStatus.CONFLICT.toString())
-                                        .message("Customer Login already exist")
+                                        .message("Customer Login already exists")
                                         .build();
 
+            logger.info("customer not created because login already exists");
             return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.CONFLICT);
         }
         
         JwtTokenDto jwtTokenDto= jwtService.constructToken(savedCustomerLoginDto.get());
         
-        logger.info("Customer created with login : {} ", customerLogin.getLogin());
+        ApiResponse apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.toString())
+                .message("Customer created")
+                .data(jwtTokenDto)
+                .build();
 
-        return new ResponseEntity<JwtTokenDto>(jwtTokenDto, HttpStatus.CREATED);
+        logger.info("Customer created");
+        return new ResponseEntity<ApiResponse>(apiResponse, HttpStatus.CREATED);
     }
 
     @PostMapping("/auth/login")
     public ResponseEntity<?> loginCustomer(@RequestBody LoginInput loginInput) {
-        logger.info("Attempt to authenticate customer : {} ", loginInput.getLogin());
-
+        logger.info("Attempt to authenticate customer with login: {} ", loginInput.getLogin());
         Optional<CustomerLoginDto> customerLogin = customerLoginService.verifyCustomerLogin(
                 loginInput.getLogin(),
                 loginInput.getPassword());
 
         if(!customerLogin.isPresent()){
-            logger.warn("Customer {} is not authenticated successfully", loginInput.getLogin());
-
             ApiResponse apiResponse = ApiResponse.builder()
                                         .code(HttpStatus.UNAUTHORIZED.toString())
-                                        .message("Customer not authenticated")
+                                        .message("Customer is not authenticated")
                                         .build();
+
+            logger.info("Customer is not authenticated successfully");
             return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.UNAUTHORIZED);
         }
 
         JwtTokenDto jwtTokenDto= jwtService.constructToken(customerLogin.get());
 
-        logger.info("Customer {} is correctly authenticated ", loginInput.getLogin());
+        ApiResponse apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.toString())
+                .message("Customer is authenticated")
+                .data(jwtTokenDto)
+                .build();
 
-        return ResponseEntity.ok(jwtTokenDto);
-  
+        logger.info("Customer is correctly authenticated");
+        return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
     }
 
     @PostMapping("/auth/logout")
     public ResponseEntity<?> logoutCustomer(@RequestBody JwtTokenDto jwtTokenDto) {
-
         logger.info("Attempt to logout customer");
 
         if(jwtService.isTokenExpired(jwtTokenDto.getAccessToken())){
-            logger.warn("Access token is expired");
-
             ApiResponse apiResponse = ApiResponse.builder()
-                                        .code(HttpStatus.UNAUTHORIZED.toString())
+                                        .code(HttpStatus.BAD_REQUEST.toString())
                                         .message("Access token is expired")
                                         .build();
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.UNAUTHORIZED);
+
+            logger.info("Access token is expired");
+            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
         }
 
         if(jwtService.isTokenExpired(jwtTokenDto.getRefreshToken())){
-            logger.warn("Refresh token is expired");
-
             ApiResponse apiResponse = ApiResponse.builder()
-                                        .code(HttpStatus.UNAUTHORIZED.toString())
+                                        .code(HttpStatus.BAD_REQUEST.toString())
                                         .message("Refresh token is expired")
                                         .build();
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.UNAUTHORIZED);
+
+            logger.info("Refresh token is expired");
+            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
         }
 
         String accessTokenLogin = jwtService.extractLogin(jwtTokenDto.getAccessToken());
         String refreshTokenLogin = jwtService.extractLogin(jwtTokenDto.getRefreshToken());
 
         if(!accessTokenLogin.equals(refreshTokenLogin)){
-            logger.warn("Access and refresh token subject are not equals");
-
             ApiResponse apiResponse = ApiResponse.builder()
                                         .code(HttpStatus.BAD_REQUEST.toString())
                                         .message("Access and refresh token subject are not equals")
                                         .build();
-                                        
+
+            logger.info("Access and refresh token subject are not equals");
             return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
         }
 
@@ -134,13 +139,12 @@ public class AuthenticationController {
             "REFRESH-TOKEN",
             jwtService.extractExpiration(jwtTokenDto.getAccessToken()).getTime());
 
-        logger.info("Customer {} is correctly logout ", jwtService.extractLogin(jwtTokenDto.getAccessToken()));
-
         ApiResponse apiResponse = ApiResponse.builder()
                                         .code(HttpStatus.OK.toString())
                                         .message("Tokens are revoked")
                                         .build();
 
+        logger.info("Customer with login {} is correctly logout",accessTokenLogin);
         return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
   
     }

@@ -29,90 +29,65 @@ public class CustomerLoginService {
 
     public Optional<CustomerLoginDto> createCustomerLogin(CustomerLogin customerLogin){
         try {
-            logger.debug("start saving customer with login: {} ", customerLogin.getLogin());
-
+            logger.debug("Start saving customer with login: {} ", customerLogin.getLogin());
             Optional<CustomerLogin> optCustomerLogin = Optional.ofNullable(customerLoginRepository.findByLogin(customerLogin.getLogin()));
             
             if(!optCustomerLogin.isPresent()){
                 String customerPassword = customerLogin.getPassword();
                 customerLogin.setPassword(passwordEncoder.encode(customerPassword));
-
                 CustomerLogin customerSaved = customerLoginRepository.save(customerLogin);
 
-                logger.debug("customer saved with id: {} ", customerLogin.getId());
-                
+                logger.debug("Customer is saved");
                 return Optional.of(customerLoginMapperImpl.convertToDto(customerSaved));
             }else{
-                logger.debug("customer with login: {} already exist", customerLogin.getLogin());
-                
+                logger.debug("Customer login already exist");
                 return Optional.empty();
             }
-
-
         } catch (Exception e) {
-
-            logger.error("Failed to save customer with login: {}", customerLogin.getLogin());
+            logger.error("Failed to save customer");
             throw new RuntimeException(e.getMessage());
         }
     }
 
     public Optional<CustomerLoginDto> fetchCustomerLoginByLogin(String login) {
         try {
-            logger.debug("start retrieving customer login for login: {} ", login);
-
+            logger.debug("Start retrieving customer with login: {} ", login);
             Optional<CustomerLogin> customerLoginFound = Optional.ofNullable(customerLoginRepository.findByLogin(login));
 
             if(customerLoginFound.isPresent()){
                 CustomerLoginDto customerLoginDtoFound  = customerLoginMapperImpl.convertToDto(customerLoginFound.get());
-                
-                logger.debug("Customer login {} successfully retrieved", login);
-                
+                logger.debug("Customer successfully retrieved");
                 return Optional.of(customerLoginDtoFound);
-                
+            }else{
+                logger.debug("Customer not found");
+                return Optional.empty();
             }
-
-            logger.debug("Customer {} not found ", login);
-
-            return Optional.empty();
-
         } catch (Exception e) {
-            logger.error("Failed to retrieve customer with login: {}", login);
+            logger.error("Failed to retrieve customer");
             throw new RuntimeException(e.getMessage());
-        }
-    }
-
-    public Optional<CustomerLogin> fetchCustomerByLogin(String login) {
-        try {
-            return Optional.ofNullable(customerLoginRepository.findByLogin(login));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch customer by login: " + e.getMessage());
         }
     }
 
     public Optional<CustomerLoginDto> verifyCustomerLogin(String login, String rawPassword){
         try {
             logger.debug("Start to log customer with login {} ", login);
-
-            Optional<CustomerLogin> customerLoginFound = Optional.of(customerLoginRepository.findByLogin(login));
+            Optional<CustomerLogin> customerLoginFound = Optional.ofNullable(customerLoginRepository.findByLogin(login));
 
             if(customerLoginFound.isPresent()){
                 if(passwordEncoder.matches(rawPassword, customerLoginFound.get().getPassword())){
                     Optional<CustomerLoginDto> customerLoginDtoFound = Optional.of(
                             customerLoginMapperImpl.convertToDto(customerLoginFound.get()));
-                    
-                    logger.debug("Customer {} logged successfully ", login);
-                    
+
+                    logger.debug("Customer is logged successfully");
                     return customerLoginDtoFound;
                 }
             }
 
-            logger.debug("Customer {} not logged ", login);
-
+            logger.debug("Customer is not logged ");
             return Optional.empty();
-
         } catch (Exception e) {
-            logger.error("Failed to log customer with login {} :", login);
-            throw new RuntimeException("Failed to verify customer Login: " + e.getMessage());
+            logger.error("Failed to log customer");
+            throw new RuntimeException(e.getMessage());
         }
     }
 }

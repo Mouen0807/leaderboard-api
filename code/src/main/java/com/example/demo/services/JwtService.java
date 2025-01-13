@@ -37,8 +37,7 @@ public class JwtService {
     private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
     public JwtTokenDto constructToken(CustomerLoginDto customerLoginDto){
-        logger.debug("Start token creation for login {} ", customerLoginDto.getLogin());
-
+        logger.debug("Attempt to create tokens for login {} ", customerLoginDto.getLogin());
         JwtToken jwtToken = new JwtToken();
         Map<String, Object> extraClaims = new HashMap<String,Object>();
 
@@ -46,9 +45,10 @@ public class JwtService {
         extraClaims.put("permissions",customerLoginDto.getPermissions());
 
         jwtToken.setAccessToken(generateAccessToken(extraClaims,customerLoginDto));
-        jwtToken.setRefreshToken(generateRefreshToken(customerLoginDto));
+        logger.debug("Access Token is created");
 
-        logger.debug("Token created for login {} ", customerLoginDto.getLogin());
+        jwtToken.setRefreshToken(generateRefreshToken(customerLoginDto));
+        logger.debug("Refresh Token is created");
 
         return jwtTokenMapperImpl.convertToDto(jwtToken);
     }

@@ -12,39 +12,38 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
-
 @RestController
 @RequestMapping("/api/v1")
 public class CustomerLoginController {
-    private final CustomerLoginService customerLoginService;
-    //private final JwtService jwtService;
-
     private static final Logger logger = LoggerFactory.getLogger(CustomerLoginController.class);
+    private final CustomerLoginService customerLoginService;
 
     public CustomerLoginController(CustomerLoginService customerLoginService) {
         this.customerLoginService = customerLoginService;
     }
 
-    @GetMapping("/customer/details")
+    @GetMapping("/customer/infos")
     public ResponseEntity<?> customerInfos(@RequestParam String login) {
-        logger.info("Attempt to get customer details for login: {} ", login);
-
+        logger.info("Attempt to get customer infos for login: {} ", login);
         Optional<CustomerLoginDto> optCustomer  = customerLoginService.fetchCustomerLoginByLogin(login);
 
         if(!optCustomer.isPresent()){
             ApiResponse apiResponse = ApiResponse.builder()
                                         .code(HttpStatus.NOT_FOUND.toString())
-                                        .message("Customer details not found")
+                                        .message("Customer infos not found")
                                         .build();
 
-            logger.info("customer details not found for login: {} ", login);
-
+            logger.info("customer infos not found");
             return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.CONFLICT);
         }
 
-        logger.info("customer details successfully found for login: {} ", login);
+        ApiResponse apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.toString())
+                .message("customer infos successfully found")
+                .data(optCustomer.get())
+                .build();
 
-        return ResponseEntity.ok(optCustomer.get());
+        logger.info("customer infos successfully found");
+        return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
     }
 }

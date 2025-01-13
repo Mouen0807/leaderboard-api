@@ -1,8 +1,18 @@
 spring:
   application:
     name: leaderboard-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/leaderboarddb
+    username: leaderboarddb
+    password: leaderboarddb
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    hibernate:
+      ddl-auto: update
   h2:
-    console.enabled: true
+    console.enabled: false
   cache:
     type: redis
   redis:
