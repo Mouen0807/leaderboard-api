@@ -1,6 +1,6 @@
 package com.example.demo.repositories;
 
-import com.example.demo.models.CustomerLogin;
+import com.example.demo.models.Customer;
 
 import java.util.UUID;
 
@@ -9,6 +9,6 @@ import org.springframework.stereotype.Repository;
 
 
 @Repository
-public interface CustomerLoginRepository extends JpaRepository<CustomerLogin, UUID> {
-    public CustomerLogin  findByLogin(String login);
+public interface CustomerRepository extends JpaRepository<Customer, UUID> {
+    public Customer findByLogin(String login);
 }

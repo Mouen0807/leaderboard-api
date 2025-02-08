@@ -30,7 +30,7 @@ public class Contest{
     private Long durationInSeconds;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    private CustomerLogin owner;
+    private Customer owner;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

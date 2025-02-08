@@ -1,10 +1,6 @@
 package com.example.demo.dtos;
 
-import com.example.demo.models.CustomerLogin;
 import lombok.*;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter

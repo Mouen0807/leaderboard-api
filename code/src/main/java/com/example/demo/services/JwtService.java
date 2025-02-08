@@ -1,14 +1,12 @@
 package com.example.demo.services;
 
-import com.example.demo.dtos.CustomerLoginDto;
+import com.example.demo.dtos.CustomerDto;
 import com.example.demo.dtos.JwtTokenDto;
 import com.example.demo.mappers.JwtTokenMapperImpl;
-import com.example.demo.models.CustomerLogin;
+import com.example.demo.models.Customer;
 import com.example.demo.models.JwtToken;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +20,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 
 @Service
 public class JwtService {
+    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
@@ -34,20 +33,20 @@ public class JwtService {
 
     private final JwtTokenMapperImpl jwtTokenMapperImpl = new JwtTokenMapperImpl();
     
-    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
-    public JwtTokenDto constructToken(CustomerLoginDto customerLoginDto){
-        logger.debug("Attempt to create tokens for login {} ", customerLoginDto.getLogin());
+    public JwtTokenDto constructToken(CustomerDto customerDto, String role, List<String> permissions){
+        logger.debug("Attempt to create tokens for login {} ", customerDto.getLogin());
+
         JwtToken jwtToken = new JwtToken();
         Map<String, Object> extraClaims = new HashMap<String,Object>();
 
-        extraClaims.put("role",customerLoginDto.getRole());
-        extraClaims.put("permissions",customerLoginDto.getPermissions());
+        extraClaims.put("role",role);
+        extraClaims.put("permissions", permissions);
 
-        jwtToken.setAccessToken(generateAccessToken(extraClaims,customerLoginDto));
+        jwtToken.setAccessToken(generateAccessToken(extraClaims, customerDto));
         logger.debug("Access Token is created");
 
-        jwtToken.setRefreshToken(generateRefreshToken(customerLoginDto));
+        jwtToken.setRefreshToken(generateRefreshToken(customerDto));
         logger.debug("Refresh Token is created");
 
         return jwtTokenMapperImpl.convertToDto(jwtToken);
@@ -55,20 +54,20 @@ public class JwtService {
 
     public String generateAccessToken(
             Map<String, Object> extraClaims,
-            CustomerLoginDto customerLoginDto
+            CustomerDto customerDto
     ) {
-        return buildToken(extraClaims, customerLoginDto, jwtExpiration);
+        return buildToken(extraClaims, customerDto, jwtExpiration);
     }
 
     public String generateRefreshToken(
-            CustomerLoginDto customerLoginDto
+            CustomerDto customerDto
     ) {
-        return buildToken(new HashMap<>(), customerLoginDto, refreshExpiration);
+        return buildToken(new HashMap<>(), customerDto, refreshExpiration);
     }
 
     private String buildToken(
             Map<String, Object> extraClaims,
-            CustomerLoginDto customerLoginDto,
+            CustomerDto customerDto,
             long expiration
     ) {
         long currentDate = System.currentTimeMillis();
@@ -77,10 +76,10 @@ public class JwtService {
 
         // Build the token
         var tokenBuilder = JWT.create()
-            .withSubject(customerLoginDto.getLogin())
+            .withSubject(customerDto.getLogin())
             .withIssuedAt(new Date(currentDate))  
             .withExpiresAt(new Date(currentDate + expiration))
-            .withJWTId(customerLoginDto.getLogin()+":"+UUID.randomUUID()+":"+currentDate);
+            .withJWTId(customerDto.getLogin()+":"+UUID.randomUUID()+":"+currentDate);
 
         for (Map.Entry<String, Object> entry : extraClaims.entrySet()) {
             tokenBuilder.withClaim(entry.getKey(), entry.getValue().toString()); 
@@ -89,7 +88,7 @@ public class JwtService {
         return tokenBuilder.sign(algorithm); 
     }
 
-    public boolean isTokenValid(String token, CustomerLogin customerLogin) {
+    public boolean isTokenValid(String token, Customer customerLogin) {
         final String login = extractLogin(token);
         return (login.equals(customerLogin.getLogin())) && !isTokenExpired(token);
     }

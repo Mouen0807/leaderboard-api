@@ -3,9 +3,9 @@ package com.example.demo.services;
 import com.example.demo.dtos.ContestDto;
 import com.example.demo.mappers.ContestMapperImpl;
 import com.example.demo.models.Contest;
-import com.example.demo.models.CustomerLogin;
+import com.example.demo.models.Customer;
 import com.example.demo.repositories.ContestRepository;
-import com.example.demo.repositories.CustomerLoginRepository;
+import com.example.demo.repositories.CustomerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,12 +17,12 @@ import java.util.UUID;
 public class ContestService {
     private static final Logger logger = LoggerFactory.getLogger(ContestService.class);
     private final ContestRepository contestRepository;
-    private final CustomerLoginRepository customerLoginRepository;
+    private final CustomerRepository customerRepository;
     private final ContestMapperImpl contestMapperImpl = new ContestMapperImpl();
 
-    public ContestService(ContestRepository contestRepository, CustomerLoginRepository customerLoginRepository) {
+    public ContestService(ContestRepository contestRepository, CustomerRepository customerRepository) {
         this.contestRepository = contestRepository;
-        this.customerLoginRepository = customerLoginRepository;
+        this.customerRepository = customerRepository;
     }
 
     public Optional<ContestDto> createContest(ContestDto contestDto){
@@ -34,12 +34,12 @@ public class ContestService {
                 return Optional.empty();
             }
 
-            Optional<CustomerLogin> customerLoginOpt = customerLoginRepository.findById(UUID.fromString(contestDto.getOwner()));
+            Optional<Customer> customerOpt = customerRepository.findById(UUID.fromString(contestDto.getOwner()));
 
-            if(customerLoginOpt.isPresent()){
+            if(customerOpt.isPresent()){
                 Contest contestToSave = Contest.builder()
                         .name(contestDto.getName())
-                        .owner(customerLoginOpt.get())
+                        .owner(customerOpt.get())
                         .durationInSeconds(contestDto.getDurationInSeconds())
                         .startMessage(contestDto.getStartMessage())
                         .endMessage(contestDto.getEndMessage())

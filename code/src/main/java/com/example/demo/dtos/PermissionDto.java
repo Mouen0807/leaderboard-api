@@ -7,7 +7,8 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class JwtTokenDto {
-    private String accessToken;
-    private String refreshToken;
+public class PermissionDto {
+    private String name;
+    private String description;
 }
+

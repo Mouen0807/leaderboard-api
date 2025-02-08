@@ -3,14 +3,11 @@ package com.example.demo.models;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 
 @Getter
@@ -18,8 +15,9 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "customerLogin")
-public class CustomerLogin{
+@Builder
+@Table(name = "customer")
+public class Customer{
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -44,7 +42,7 @@ public class CustomerLogin{
 
     @Override
     public String toString() {
-        return "CustomerLogin{" +
+        return "Customer{" +
                 "login='" + login + '\'' +
                 ", password='" + password + '\'' +
                 ", customerDetails=" + customerDetails +

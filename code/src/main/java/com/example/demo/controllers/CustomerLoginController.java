@@ -1,8 +1,8 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dtos.CustomerLoginDto;
+import com.example.demo.dtos.CustomerDto;
 import com.example.demo.models.ApiResponse;
-import com.example.demo.services.CustomerLoginService;
+import com.example.demo.services.CustomerService;
 
 import java.util.Optional;
 
@@ -16,18 +16,18 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 public class CustomerLoginController {
     private static final Logger logger = LoggerFactory.getLogger(CustomerLoginController.class);
-    private final CustomerLoginService customerLoginService;
+    private final CustomerService customerService;
 
-    public CustomerLoginController(CustomerLoginService customerLoginService) {
-        this.customerLoginService = customerLoginService;
+    public CustomerLoginController(CustomerService customerService) {
+        this.customerService = customerService;
     }
 
     @GetMapping("/customer/infos")
     public ResponseEntity<?> customerInfos(@RequestParam String login) {
         logger.info("Attempt to get customer infos for login: {} ", login);
-        Optional<CustomerLoginDto> optCustomer  = customerLoginService.fetchCustomerLoginByLogin(login);
+        Optional<CustomerDto> optCustomer  = customerService.findCustomer(login);
 
-        if(!optCustomer.isPresent()){
+        if(optCustomer.isEmpty()){
             ApiResponse apiResponse = ApiResponse.builder()
                                         .code(HttpStatus.NOT_FOUND.toString())
                                         .message("Customer infos not found")
