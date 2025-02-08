@@ -1,9 +1,9 @@
 package com.example.demo.config;
 
-import com.example.demo.models.CustomerLogin;
+import com.example.demo.models.Customer;
 import com.example.demo.models.Permission;
 import com.example.demo.models.Role;
-import com.example.demo.repositories.CustomerLoginRepository;
+import com.example.demo.repositories.CustomerRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -20,20 +20,19 @@ import java.util.stream.Collectors;
 @Service
 public class MyUserDetailsService implements UserDetailsService {
 
+    private final CustomerRepository customerRepository;
 
-    private final CustomerLoginRepository customerLoginRepository;
-
-    public MyUserDetailsService(CustomerLoginRepository customerLoginRepository){
-        this.customerLoginRepository = customerLoginRepository;
+    public MyUserDetailsService(CustomerRepository customerRepository){
+        this.customerRepository = customerRepository;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<CustomerLogin> customerLogin = Optional.of(customerLoginRepository.findByLogin(username));
+        Optional<Customer> customer = Optional.of(customerRepository.findByLogin(username));
 
-        return new User(customerLogin.get().getLogin(),
-                customerLogin.get().getPassword(),
-                mapRolesToAuthorities(customerLogin.get().getRole()));
+        return new User(customer.get().getLogin(),
+                customer.get().getPassword(),
+                mapRolesToAuthorities(customer.get().getRole()));
 
     }
 

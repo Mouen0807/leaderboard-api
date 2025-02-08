@@ -2,12 +2,15 @@ package com.example.demo.dtos;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Builder
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class JwtTokenDto {
-    private String accessToken;
-    private String refreshToken;
+public class RoleDto {
+    private String name;
+    private List<String> permissions;
 }
+

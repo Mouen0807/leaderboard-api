@@ -1,15 +1,18 @@
 package com.example.demo.controllers;
 
 import com.example.demo.dtos.JwtTokenDto;
+import com.example.demo.dtos.RoleDto;
 import com.example.demo.models.LoginInput;
+import com.example.demo.models.Role;
 import com.example.demo.services.JwtService;
 import com.example.demo.services.RedisCacheService;
-import com.example.demo.dtos.CustomerLoginDto;
+import com.example.demo.dtos.CustomerDto;
 import com.example.demo.models.ApiResponse;
-import com.example.demo.models.CustomerLogin;
-import com.example.demo.services.CustomerLoginService;
+import com.example.demo.services.CustomerService;
+import com.example.demo.services.RoleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,57 +22,69 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/v1")
 public class AuthenticationController {
-
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
 
-    private final CustomerLoginService customerLoginService;
-    private final JwtService jwtService;
-    private final RedisCacheService redisCacheService;
-
-    public AuthenticationController(CustomerLoginService customerLoginService, 
-        JwtService jwtService, 
-        RedisCacheService redisCacheService
-    ) {
-        this.customerLoginService = customerLoginService;
-        this.jwtService = jwtService;
-        this.redisCacheService = redisCacheService;
-    }  
+    @Autowired
+    private CustomerService customerService;
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private RedisCacheService redisCacheService;
+    @Autowired
+    private RoleService roleService;
 
     @PostMapping("/auth/create")
-    public ResponseEntity<?> saveCustomer(@RequestBody CustomerLogin customerLogin) {
-        logger.info("Attempt to create customer with login: {} ", customerLogin.getLogin());
-        Optional<CustomerLoginDto> savedCustomerLoginDto = customerLoginService.createCustomerLogin(customerLogin);
+    public ResponseEntity<?> saveCustomer(@RequestBody CustomerDto customerDto) {
+        logger.info("Attempt to create customer with login: {} ", customerDto.getLogin());
+
+        Optional<CustomerDto> customerLoginOpt = customerService.findCustomer(customerDto.getLogin());
         
-        if(!savedCustomerLoginDto.isPresent()){
+        if(customerLoginOpt.isPresent()){
             ApiResponse apiResponse = ApiResponse.builder()
                                         .code(HttpStatus.CONFLICT.toString())
                                         .message("Customer Login already exists")
                                         .build();
-
             logger.info("customer not created because login already exists");
+
             return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.CONFLICT);
         }
-        
-        JwtTokenDto jwtTokenDto= jwtService.constructToken(savedCustomerLoginDto.get());
+
+        Optional<RoleDto> roleOpt = roleService.findByName(customerDto.getRole());
+
+        if(roleOpt.isEmpty()){
+            ApiResponse apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.BAD_REQUEST.toString())
+                    .message("Role doesn't exist")
+                    .build();
+            logger.info("customer not created because role doesn't exist");
+
+            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
+        }
+
+        Optional<CustomerDto> optCustomerSaved = customerService.createCustomer(customerDto);
+        JwtTokenDto jwtTokenDto= jwtService.constructToken(optCustomerSaved.get(),
+                roleOpt.get().getName(),
+                roleOpt.get().getPermissions());
         
         ApiResponse apiResponse = ApiResponse.builder()
                 .code(HttpStatus.OK.toString())
                 .message("Customer created")
                 .data(jwtTokenDto)
                 .build();
-
         logger.info("Customer created");
+
         return new ResponseEntity<ApiResponse>(apiResponse, HttpStatus.CREATED);
     }
 
     @PostMapping("/auth/login")
     public ResponseEntity<?> loginCustomer(@RequestBody LoginInput loginInput) {
         logger.info("Attempt to authenticate customer with login: {} ", loginInput.getLogin());
-        Optional<CustomerLoginDto> customerLogin = customerLoginService.verifyCustomerLogin(
+
+        Optional<CustomerDto> optCustomerLoginDto = customerService.verifyCustomer(
                 loginInput.getLogin(),
                 loginInput.getPassword());
 
-        if(!customerLogin.isPresent()){
+        if(optCustomerLoginDto.isEmpty()){
             ApiResponse apiResponse = ApiResponse.builder()
                                         .code(HttpStatus.UNAUTHORIZED.toString())
                                         .message("Customer is not authenticated")
@@ -79,7 +94,10 @@ public class AuthenticationController {
             return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.UNAUTHORIZED);
         }
 
-        JwtTokenDto jwtTokenDto= jwtService.constructToken(customerLogin.get());
+        Optional<RoleDto> roleOpt = roleService.findByName(optCustomerLoginDto.get().getRole());
+        JwtTokenDto jwtTokenDto= jwtService.constructToken(optCustomerLoginDto.get(),
+                roleOpt.get().getName(),
+                roleOpt.get().getPermissions());
 
         ApiResponse apiResponse = ApiResponse.builder()
                 .code(HttpStatus.OK.toString())
@@ -106,7 +124,7 @@ public class AuthenticationController {
         }
 
         if(jwtService.isTokenExpired(jwtTokenDto.getRefreshToken())){
-            ApiResponse apiResponse = ApiResponse.builder()
+            ApiResponse<Object> apiResponse = ApiResponse.builder()
                                         .code(HttpStatus.BAD_REQUEST.toString())
                                         .message("Refresh token is expired")
                                         .build();
