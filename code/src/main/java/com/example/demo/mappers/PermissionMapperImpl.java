@@ -3,6 +3,7 @@ package com.example.demo.mappers;
 import com.example.demo.dtos.PermissionDto;
 import com.example.demo.models.Permission;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PermissionMapperImpl implements PermissionMapper{
@@ -11,6 +12,7 @@ public class PermissionMapperImpl implements PermissionMapper{
         if(permission == null) return null;
 
         PermissionDto permissionDto = PermissionDto.builder()
+                .id(permission.getId())
                 .description(permission.getDescription())
                 .name(permission.getName())
                 .build();
@@ -19,8 +21,20 @@ public class PermissionMapperImpl implements PermissionMapper{
     }
 
     @Override
-    public List<PermissionDto> convertToDto(List<Permission> permission) {
-        return List.of();
+    public List<PermissionDto> convertToDto(List<Permission> permissions) {
+        if(permissions == null) return null;
+
+        List<PermissionDto> permissionDtoList = new ArrayList<>();
+        for(Permission permission: permissions){
+            PermissionDto permissionDto = PermissionDto.builder()
+                    .id(permission.getId())
+                    .description(permission.getDescription())
+                    .name(permission.getName())
+                    .build();
+            permissionDtoList.add(permissionDto);
+        }
+
+        return permissionDtoList;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.example.demo.services;
 
+import com.example.demo.dtos.PermissionDto;
 import com.example.demo.dtos.RoleDto;
 import com.example.demo.mappers.RoleMapper;
 import com.example.demo.mappers.RoleMapperImpl;
@@ -28,25 +29,24 @@ public class RoleService {
     @Autowired
     private PermissionRepository permissionRepository;
 
-    public Optional<RoleDto> create(String name, List<String> permissions) {
+    public Optional<RoleDto> createRole(RoleDto roleDto) {
         try {
-            logger.debug("Start creating role by name: {} ", name);
+            logger.debug("Start creating role by name: {} ", roleDto.getName());
 
             Set<Permission> setPermissions = new HashSet<>();
-
-            for(String permission: permissions){
+            for(String permission: roleDto.getPermissions()){
                 Optional<Permission> optPermission = Optional.of(permissionRepository.findByName(permission));
                 setPermissions.add(optPermission.get());
             }
 
             Role role = Role.builder()
-                    .name(name)
+                    .name(roleDto.getName())
                     .permissions(setPermissions)
                     .build();
 
             roleRepository.save(role);
             logger.debug("Role created");
-            
+
             return Optional.ofNullable(roleMapper.convertToDto(role));
         } catch (Exception e) {
             logger.error("Failed to create role");
@@ -54,7 +54,37 @@ public class RoleService {
         }
     }
 
-    public Optional<RoleDto> findByName(String name){
+    public Optional<RoleDto> updateRole(RoleDto roleDto) {
+        try {
+            logger.debug("Start updating role with id: {} ", roleDto.getId());
+
+            Set<Permission> setPermissions = new HashSet<>();
+
+            for(String permission: roleDto.getPermissions()){
+                Optional<Permission> optPermission = Optional.of(permissionRepository.findByName(permission));
+                setPermissions.add(optPermission.get());
+            }
+
+            Optional<Role> optRole = roleRepository.findById(roleDto.getId());
+            if(optRole.isEmpty()) {
+                logger.debug("Role not found");
+                return Optional.empty();
+            }
+
+            Role role = optRole.get();
+            role.setPermissions(setPermissions);
+            role.setName(roleDto.getName());
+            roleRepository.save(role);
+
+            logger.debug("Role updated");
+            return Optional.of(roleMapper.convertToDto(role));
+        } catch (Exception e) {
+            logger.error("Failed to update role");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Optional<RoleDto> findRoleByName(String name){
         try {
             logger.debug("Start finding role by name: {} ", name);
 
@@ -68,6 +98,24 @@ public class RoleService {
             }
         } catch (Exception e) {
             logger.error("Failed to find role");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Optional<RoleDto> findRoleById(Long id){
+        try {
+            logger.debug("Start to find role with id: {} ", id);
+
+            Optional<Role> optrole = roleRepository.findById(id);
+            if(optrole.isEmpty()) {
+                logger.debug("Role not found");
+                return Optional.empty();
+            }
+
+            logger.debug("Role is found");
+            return Optional.of(roleMapper.convertToDto(optrole.get()));
+        } catch (Exception e) {
+            logger.error("Failed to save permission");
             throw new RuntimeException(e.getMessage());
         }
     }

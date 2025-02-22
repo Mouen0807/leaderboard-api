@@ -49,7 +49,7 @@ public class AuthenticationController {
             return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.CONFLICT);
         }
 
-        Optional<RoleDto> roleOpt = roleService.findByName(customerDto.getRole());
+        Optional<RoleDto> roleOpt = roleService.findRoleByName(customerDto.getRole());
 
         if(roleOpt.isEmpty()){
             ApiResponse apiResponse = ApiResponse.builder()
@@ -94,7 +94,7 @@ public class AuthenticationController {
             return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.UNAUTHORIZED);
         }
 
-        Optional<RoleDto> roleOpt = roleService.findByName(optCustomerLoginDto.get().getRole());
+        Optional<RoleDto> roleOpt = roleService.findRoleByName(optCustomerLoginDto.get().getRole());
         JwtTokenDto jwtTokenDto= jwtService.constructToken(optCustomerLoginDto.get(),
                 roleOpt.get().getName(),
                 roleOpt.get().getPermissions());

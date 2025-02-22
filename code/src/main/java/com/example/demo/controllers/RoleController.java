@@ -27,11 +27,10 @@ public class RoleController {
     @Autowired
     private PermissionService permissionService;
 
-
     @PostMapping("/role/create")
     public ResponseEntity<?> createRole(@RequestBody RoleDto roleDto) {
         logger.info("Attempt to create role with name: {} ", roleDto.getName());
-        Optional<RoleDto> optRoleDto  = roleService.findByName(roleDto.getName());
+        Optional<RoleDto> optRoleDto  = roleService.findRoleByName(roleDto.getName());
 
         if(optRoleDto.isPresent()){
             ApiResponse apiResponse = ApiResponse.builder()
@@ -58,13 +57,82 @@ public class RoleController {
             }
         }
 
-        Optional<RoleDto> optRoleDtoSaved = roleService.create(roleDto.getName(), permissions);
+        Optional<RoleDto> optRoleDtoSaved = roleService.createRole(roleDto);
 
         logger.info("role is created");
         ApiResponse apiResponse = ApiResponse.builder()
                 .code(HttpStatus.OK.toString())
                 .message("Role is created")
                 .data(optRoleDtoSaved)
+                .build();
+
+        return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
+    }
+
+    @GetMapping("/role")
+    public ResponseEntity<?> findRoleByName(@RequestParam String name) {
+        logger.info("Attempt to find role with name: {} ", name);
+        Optional<RoleDto> optRoleDto  = roleService.findRoleByName(name);
+
+        if(optRoleDto.isEmpty()){
+            ApiResponse apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.NOT_FOUND.toString())
+                    .message("Role is not found")
+                    .build();
+
+            logger.info("Role is not found");
+            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.NOT_FOUND);
+        }
+
+        logger.info("Role is successfully found");
+        ApiResponse apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.toString())
+                .message("Role is found")
+                .data(optRoleDto.get())
+                .build();
+
+        return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
+    }
+
+    @PutMapping("/role/update/{id}")
+    public ResponseEntity<?> updateRole(@RequestBody RoleDto roleDto, @PathVariable Long id) {
+        logger.info("Attempt to update role with id {}", id);
+        roleDto.setId(id);
+
+        Optional<RoleDto> optRoleDto  = roleService.findRoleById(id);
+
+        if(optRoleDto.isEmpty()){
+            ApiResponse apiResponse = ApiResponse.builder()
+                    .code(HttpStatus.BAD_REQUEST.toString())
+                    .message("Role doesn't exist")
+                    .build();
+
+            logger.info("Role doesn't exist");
+            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
+        }
+
+        List<String> permissions = roleDto.getPermissions();
+
+        for(String permission: permissions){
+            Optional<PermissionDto> optPermission = permissionService.findPermissionByName(permission);
+            if(optPermission.isEmpty()){
+                ApiResponse apiResponse = ApiResponse.builder()
+                        .code(HttpStatus.BAD_REQUEST.toString())
+                        .message("Permission " + permission + " doesn't exist")
+                        .build();
+
+                logger.info("Permission doesn't exist");
+                return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        Optional<RoleDto> optRoleDtoUpdated = roleService.updateRole(roleDto);
+
+        logger.info("Role is updated");
+        ApiResponse apiResponse = ApiResponse.builder()
+                .code(HttpStatus.OK.toString())
+                .message("Role is updated")
+                .data(optRoleDtoUpdated.get())
                 .build();
 
         return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);

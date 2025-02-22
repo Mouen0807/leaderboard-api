@@ -82,15 +82,15 @@ public class JwtService {
             .withJWTId(customerDto.getLogin()+":"+UUID.randomUUID()+":"+currentDate);
 
         for (Map.Entry<String, Object> entry : extraClaims.entrySet()) {
-            tokenBuilder.withClaim(entry.getKey(), entry.getValue().toString()); 
+            tokenBuilder.withClaim(entry.getKey(), entry.getValue().toString());
         }
         
         return tokenBuilder.sign(algorithm); 
     }
 
-    public boolean isTokenValid(String token, Customer customerLogin) {
+    public boolean isTokenValid(String token, Customer customer) {
         final String login = extractLogin(token);
-        return (login.equals(customerLogin.getLogin())) && !isTokenExpired(token);
+        return (login.equals(customer.getLogin())) && !isTokenExpired(token);
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
