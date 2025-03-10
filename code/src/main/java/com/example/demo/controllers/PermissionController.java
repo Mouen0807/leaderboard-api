@@ -22,29 +22,28 @@ public class PermissionController {
 
     @PostMapping("/permission/create")
     public ResponseEntity<?> createPermission(@RequestBody PermissionDto permissionDto) {
-        logger.info("Attempt to create permission with name: {} ", permissionDto.getName());
-        Optional<PermissionDto> optPermissionDto  = permissionService.findPermissionByName(permissionDto.getName());
+        logger.info("Attempt to create permission {} ", permissionDto);
 
-        if(optPermissionDto.isPresent()){
-            ApiResponse apiResponse = ApiResponse.builder()
+        Optional<PermissionDto> optPermissionDtoCreated = permissionService.createPermission(permissionDto);
+
+        if(optPermissionDtoCreated.isEmpty()){
+            ApiResponse<PermissionDto> apiResponse = ApiResponse.<PermissionDto>builder()
                     .code(HttpStatus.BAD_REQUEST.toString())
-                    .message("Permission already exist")
+                    .message("Permission already exists")
                     .build();
 
-            logger.info("permission is not created");
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
+            logger.info("Permission not created");
+            return new ResponseEntity<>(apiResponse,HttpStatus.BAD_REQUEST);
         }
 
-        PermissionDto optPermissionDtoSaved = permissionService.createPermission(permissionDto);
-
-        logger.info("permission is created");
-        ApiResponse apiResponse = ApiResponse.builder()
+        logger.info("Permission created");
+        ApiResponse<PermissionDto> apiResponse = ApiResponse.<PermissionDto>builder()
                 .code(HttpStatus.OK.toString())
                 .message("Permission is created")
-                .data(optPermissionDtoSaved)
+                .data(optPermissionDtoCreated.get())
                 .build();
 
-        return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
+        return new ResponseEntity<>(apiResponse,HttpStatus.OK);
     }
 
     @GetMapping("/permission/all")
@@ -52,39 +51,38 @@ public class PermissionController {
         logger.info("Attempt to retrieve all permissions");
         List<PermissionDto> permissionsDtoList  = permissionService.findAllPermissions();
 
-        ApiResponse apiResponse = ApiResponse.builder()
+        ApiResponse<List<PermissionDto> > apiResponse = ApiResponse.<List<PermissionDto> >builder()
             .code(HttpStatus.OK.toString())
             .message("All permissions retrieved")
             .data(permissionsDtoList)
             .build();
 
         logger.info("All permissions retrieved");
-        return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
+        return new ResponseEntity<>(apiResponse,HttpStatus.OK);
     }
 
     @PutMapping("/permission/update/{id}")
-    public ResponseEntity<?> updatePermission(@RequestBody PermissionDto permissionDto, @PathVariable Long id) {
-        logger.info("Attempt to update permission with id {}", id);
-        permissionDto.setId(id);
+    public ResponseEntity<?> updatePermission(@PathVariable Long id, @RequestBody PermissionDto permissionDto) {
+        logger.info("Attempt to update permission id {} with values {}", id, permissionDto.toString());
 
-        Optional<PermissionDto> optPermissionUpdated = permissionService.updatePermission(permissionDto);
+        Optional<PermissionDto> optPermissionUpdated = permissionService.updatePermission(id, permissionDto);
         if(optPermissionUpdated.isEmpty()){
-            ApiResponse apiResponse = ApiResponse.builder()
+            ApiResponse<PermissionDto> apiResponse = ApiResponse.<PermissionDto>builder()
                     .code(HttpStatus.BAD_REQUEST.toString())
-                    .message("Permission not found")
+                    .message("Permission id not found or name already exists")
                     .build();
 
-            logger.info("Permission is not found");
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
+            logger.info("Permission id not found or name already exists");
+            return new ResponseEntity<>(apiResponse,HttpStatus.BAD_REQUEST);
         }
 
-        logger.info("permission is updated");
-        ApiResponse apiResponse = ApiResponse.builder()
+        logger.info("Permission is updated");
+        ApiResponse<PermissionDto> apiResponse = ApiResponse.<PermissionDto>builder()
                 .code(HttpStatus.OK.toString())
                 .message("Permission is updated")
                 .data(optPermissionUpdated.get())
                 .build();
 
-        return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
+        return new ResponseEntity<>(apiResponse,HttpStatus.OK);
     }
 }

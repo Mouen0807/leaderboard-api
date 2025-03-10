@@ -31,7 +31,7 @@ public class ContestController {
         if(!optContestDto.isPresent()){
             ApiResponse apiResponse = ApiResponse.builder()
                     .code(HttpStatus.BAD_REQUEST.toString())
-                    .message("Owner of contest don't exist")
+                    .message("Owner of contest doesn't exist")
                     .build();
 
             logger.info("contest is not created");

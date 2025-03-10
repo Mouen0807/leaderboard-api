@@ -33,5 +33,14 @@ public class Role {
 
         return permissionNames;
     }
+
+    @Override
+    public String toString() {
+        return "Role{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", permissions=" + permissions +
+                '}';
+    }
 }
 

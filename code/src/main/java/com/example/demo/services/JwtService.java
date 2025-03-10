@@ -1,5 +1,6 @@
 package com.example.demo.services;
 
+import com.auth0.jwt.interfaces.Claim;
 import com.example.demo.dtos.CustomerDto;
 import com.example.demo.dtos.JwtTokenDto;
 import com.example.demo.mappers.JwtTokenMapperImpl;
@@ -32,7 +33,14 @@ public class JwtService {
     private long refreshExpiration;
 
     private final JwtTokenMapperImpl jwtTokenMapperImpl = new JwtTokenMapperImpl();
-    
+
+    public List<String> extractPermissions(String token){
+        DecodedJWT decodedJWT = JWT.decode(token);
+        String permissionsClaim = decodedJWT.getClaim("permissions").asString();
+        List<String> permissions = Arrays.asList(permissionsClaim.replaceAll("[\\[\\]\\s]", "").split(","));
+
+        return permissions;
+    }
 
     public JwtTokenDto constructToken(CustomerDto customerDto, String role, List<String> permissions){
         logger.debug("Attempt to create tokens for login {} ", customerDto.getLogin());
@@ -76,7 +84,7 @@ public class JwtService {
 
         // Build the token
         var tokenBuilder = JWT.create()
-            .withSubject(customerDto.getLogin())
+            .withSubject(customerDto.getId())
             .withIssuedAt(new Date(currentDate))  
             .withExpiresAt(new Date(currentDate + expiration))
             .withJWTId(customerDto.getLogin()+":"+UUID.randomUUID()+":"+currentDate);
@@ -89,16 +97,16 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, Customer customer) {
-        final String login = extractLogin(token);
-        return (login.equals(customer.getLogin())) && !isTokenExpired(token);
+        final String customerId = extractSubject(token);
+        return (customerId.equals(customer.getId().toString())) && !isTokenExpired(token);
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String customerLogin = extractLogin(token);
-        return (customerLogin.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        final String customerId = extractSubject(token);
+        return (customerId.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    public String extractLogin(String token) {
+    public String extractSubject(String token) {
         DecodedJWT jwt = JWT.decode(token);
         return jwt.getSubject();
     }

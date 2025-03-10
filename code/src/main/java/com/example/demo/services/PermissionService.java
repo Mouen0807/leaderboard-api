@@ -33,46 +33,44 @@ public class PermissionService {
         }
     }
 
-    public PermissionDto createPermission(PermissionDto permissionDto){
+    public Optional<PermissionDto> createPermission(PermissionDto permissionDto){
         try {
             logger.debug("Start saving permission with name: {} ", permissionDto.getName());
+
+            Optional<Permission> optPermission = Optional.ofNullable(permissionRepository.findByName(permissionDto.getName()));
+            if(optPermission.isPresent()){
+                logger.debug("Permission already exists");
+                return Optional.empty();
+            }
 
             Permission permissionToSaved = permissionMapper.convertToEntity(permissionDto);
             Permission permissionSaved = permissionRepository.save(permissionToSaved);
 
             logger.debug("Permission is saved");
-            return permissionMapper.convertToDto(permissionSaved);
+            return Optional.of(permissionMapper.convertToDto(permissionSaved));
         } catch (Exception e) {
             logger.error("Failed to save permission");
             throw new RuntimeException(e.getMessage());
         }
     }
 
-    public Optional<PermissionDto> findPermissionByName(String name){
+    public Optional<PermissionDto> updatePermission(Long id, PermissionDto permissionDto){
         try {
-            logger.debug("Start finding permission by name: {} ", name);
+            logger.debug("Start to update permission id {} ", permissionDto.getId());
 
-            Permission permission = permissionRepository.findByName(name);
-
-            logger.debug("Permission found");
-            return Optional.ofNullable(permissionMapper.convertToDto(permission));
-        } catch (Exception e) {
-            logger.error("Failed to find permission");
-            throw new RuntimeException(e.getMessage());
-        }
-    }
-
-    public Optional<PermissionDto> updatePermission(PermissionDto permissionDto){
-        try {
-            logger.debug("Start to update permission with id: {} ", permissionDto.getId());
-
-            Optional<Permission> optPermission = permissionRepository.findById(permissionDto.getId());
+            Optional<Permission> optPermission = permissionRepository.findById(id);
             if(optPermission.isEmpty()) {
                 logger.debug("Permission not found");
                 return Optional.empty();
             }
 
-            Permission permissionToUpdate= optPermission.get();
+            Optional<Permission> optCheckName = Optional.ofNullable(permissionRepository.findByName(permissionDto.getName()));
+            if(optCheckName.isEmpty()){
+                logger.debug("Permission name already exists");
+                return Optional.empty();
+            }
+
+            Permission permissionToUpdate = optPermission.get();
             permissionToUpdate.setDescription(permissionDto.getDescription());
             permissionToUpdate.setName(permissionDto.getName());
             Permission permissionSaved = permissionRepository.save(permissionToUpdate);

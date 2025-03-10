@@ -18,4 +18,20 @@ public class ContestDto{
     private Long durationInSeconds;
     private String createdAt;
     private String updatedAt;
+
+    @Override
+    public String toString() {
+        return "ContestDto{" +
+                "id='" + id + '\'' +
+                ", owner='" + owner + '\'' +
+                ", name='" + name + '\'' +
+                ", startMessage='" + startMessage + '\'' +
+                ", endMessage='" + endMessage + '\'' +
+                ", isStarted=" + isStarted +
+                ", isStopped=" + isStopped +
+                ", durationInSeconds=" + durationInSeconds +
+                ", createdAt='" + createdAt + '\'' +
+                ", updatedAt='" + updatedAt + '\'' +
+                '}';
+    }
 }

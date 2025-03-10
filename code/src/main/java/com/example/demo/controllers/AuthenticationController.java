@@ -2,8 +2,10 @@ package com.example.demo.controllers;
 
 import com.example.demo.dtos.JwtTokenDto;
 import com.example.demo.dtos.RoleDto;
+import com.example.demo.mappers.CustomerMapper;
+import com.example.demo.mappers.CustomerMapperImpl;
+import com.example.demo.models.Customer;
 import com.example.demo.models.LoginInput;
-import com.example.demo.models.Role;
 import com.example.demo.services.JwtService;
 import com.example.demo.services.RedisCacheService;
 import com.example.demo.dtos.CustomerDto;
@@ -23,13 +25,17 @@ import java.util.Optional;
 @RequestMapping("/api/v1")
 public class AuthenticationController {
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
+    private final CustomerMapper customerMapper = new CustomerMapperImpl();
 
     @Autowired
     private CustomerService customerService;
+
     @Autowired
     private JwtService jwtService;
+
     @Autowired
     private RedisCacheService redisCacheService;
+
     @Autowired
     private RoleService roleService;
 
@@ -37,61 +43,49 @@ public class AuthenticationController {
     public ResponseEntity<?> saveCustomer(@RequestBody CustomerDto customerDto) {
         logger.info("Attempt to create customer with login: {} ", customerDto.getLogin());
 
-        Optional<CustomerDto> customerLoginOpt = customerService.findCustomer(customerDto.getLogin());
-        
-        if(customerLoginOpt.isPresent()){
-            ApiResponse apiResponse = ApiResponse.builder()
-                                        .code(HttpStatus.CONFLICT.toString())
-                                        .message("Customer Login already exists")
-                                        .build();
-            logger.info("customer not created because login already exists");
-
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.CONFLICT);
-        }
-
-        Optional<RoleDto> roleOpt = roleService.findRoleByName(customerDto.getRole());
-
-        if(roleOpt.isEmpty()){
-            ApiResponse apiResponse = ApiResponse.builder()
+        Optional<Customer> optCustomerSaved = customerService.saveCustomer(customerDto);
+        if(optCustomerSaved.isEmpty()){
+            ApiResponse<CustomerDto> apiResponse = ApiResponse.<CustomerDto>builder()
                     .code(HttpStatus.BAD_REQUEST.toString())
-                    .message("Role doesn't exist")
+                    .message("Login already exists, or role not found")
                     .build();
-            logger.info("customer not created because role doesn't exist");
 
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
+            logger.info("Login already exists, or role not found");
+            return new ResponseEntity<>(apiResponse,HttpStatus.BAD_REQUEST);
         }
 
-        Optional<CustomerDto> optCustomerSaved = customerService.createCustomer(customerDto);
-        JwtTokenDto jwtTokenDto= jwtService.constructToken(optCustomerSaved.get(),
-                roleOpt.get().getName(),
-                roleOpt.get().getPermissions());
+        CustomerDto customerSavedDto = customerMapper.convertToDto(optCustomerSaved.get());
+
+        JwtTokenDto jwtTokenDto = jwtService.constructToken(customerSavedDto,
+                optCustomerSaved.get().getRole().getName(),
+                optCustomerSaved.get().getRole().getPermissionNames());
         
-        ApiResponse apiResponse = ApiResponse.builder()
+        ApiResponse<JwtTokenDto> apiResponse = ApiResponse.<JwtTokenDto>builder()
                 .code(HttpStatus.OK.toString())
                 .message("Customer created")
                 .data(jwtTokenDto)
                 .build();
-        logger.info("Customer created");
 
-        return new ResponseEntity<ApiResponse>(apiResponse, HttpStatus.CREATED);
+        logger.info("Customer created");
+        return new ResponseEntity<>(apiResponse, HttpStatus.CREATED);
     }
 
     @PostMapping("/auth/login")
     public ResponseEntity<?> loginCustomer(@RequestBody LoginInput loginInput) {
-        logger.info("Attempt to authenticate customer with login: {} ", loginInput.getLogin());
+        logger.info("Attempt to authenticate customer with login {} ", loginInput.getLogin());
 
-        Optional<CustomerDto> optCustomerLoginDto = customerService.verifyCustomer(
+        Optional<CustomerDto> optCustomerLoginDto = customerService.loginCustomer(
                 loginInput.getLogin(),
                 loginInput.getPassword());
 
         if(optCustomerLoginDto.isEmpty()){
-            ApiResponse apiResponse = ApiResponse.builder()
+            ApiResponse<LoginInput> apiResponse = ApiResponse.<LoginInput> builder()
                                         .code(HttpStatus.UNAUTHORIZED.toString())
-                                        .message("Customer is not authenticated")
+                                        .message("Customer not authenticated")
                                         .build();
 
-            logger.info("Customer is not authenticated successfully");
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.UNAUTHORIZED);
+            logger.info("Customer not authenticated");
+            return new ResponseEntity<>(apiResponse,HttpStatus.UNAUTHORIZED);
         }
 
         Optional<RoleDto> roleOpt = roleService.findRoleByName(optCustomerLoginDto.get().getRole());
@@ -99,51 +93,51 @@ public class AuthenticationController {
                 roleOpt.get().getName(),
                 roleOpt.get().getPermissions());
 
-        ApiResponse apiResponse = ApiResponse.builder()
+        ApiResponse<JwtTokenDto> apiResponse = ApiResponse.<JwtTokenDto>builder()
                 .code(HttpStatus.OK.toString())
                 .message("Customer is authenticated")
                 .data(jwtTokenDto)
                 .build();
 
-        logger.info("Customer is correctly authenticated");
-        return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
+        logger.info("Customer is authenticated");
+        return new ResponseEntity<>(apiResponse,HttpStatus.OK);
     }
 
     @PostMapping("/auth/logout")
     public ResponseEntity<?> logoutCustomer(@RequestBody JwtTokenDto jwtTokenDto) {
-        logger.info("Attempt to logout customer");
+        logger.info("Attempt to logout a customer");
 
         if(jwtService.isTokenExpired(jwtTokenDto.getAccessToken())){
-            ApiResponse apiResponse = ApiResponse.builder()
+            ApiResponse<JwtTokenDto> apiResponse = ApiResponse.<JwtTokenDto> builder()
                                         .code(HttpStatus.BAD_REQUEST.toString())
                                         .message("Access token is expired")
                                         .build();
 
             logger.info("Access token is expired");
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(apiResponse,HttpStatus.BAD_REQUEST);
         }
 
         if(jwtService.isTokenExpired(jwtTokenDto.getRefreshToken())){
-            ApiResponse<Object> apiResponse = ApiResponse.builder()
+            ApiResponse<JwtTokenDto> apiResponse = ApiResponse.<JwtTokenDto> builder()
                                         .code(HttpStatus.BAD_REQUEST.toString())
                                         .message("Refresh token is expired")
                                         .build();
 
             logger.info("Refresh token is expired");
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(apiResponse,HttpStatus.BAD_REQUEST);
         }
 
-        String accessTokenLogin = jwtService.extractLogin(jwtTokenDto.getAccessToken());
-        String refreshTokenLogin = jwtService.extractLogin(jwtTokenDto.getRefreshToken());
+        String accessTokenSubject = jwtService.extractSubject(jwtTokenDto.getAccessToken());
+        String refreshTokenSubject = jwtService.extractSubject(jwtTokenDto.getRefreshToken());
 
-        if(!accessTokenLogin.equals(refreshTokenLogin)){
-            ApiResponse apiResponse = ApiResponse.builder()
+        if(!accessTokenSubject.equals(refreshTokenSubject)){
+            ApiResponse<JwtTokenDto> apiResponse = ApiResponse.<JwtTokenDto> builder()
                                         .code(HttpStatus.BAD_REQUEST.toString())
                                         .message("Access and refresh token subject are not equals")
                                         .build();
 
             logger.info("Access and refresh token subject are not equals");
-            return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(apiResponse,HttpStatus.BAD_REQUEST);
         }
 
         String accessTokenId = jwtService.extractId(jwtTokenDto.getAccessToken());
@@ -157,13 +151,13 @@ public class AuthenticationController {
             "REFRESH-TOKEN",
             jwtService.extractExpiration(jwtTokenDto.getAccessToken()).getTime());
 
-        ApiResponse apiResponse = ApiResponse.builder()
+        ApiResponse<JwtTokenDto> apiResponse = ApiResponse.<JwtTokenDto> builder()
                                         .code(HttpStatus.OK.toString())
                                         .message("Tokens are revoked")
                                         .build();
 
-        logger.info("Customer with login {} is correctly logout",accessTokenLogin);
-        return new ResponseEntity<ApiResponse>(apiResponse,HttpStatus.OK);
+        logger.info("Customer {} is correctly logout", accessTokenSubject);
+        return new ResponseEntity<>(apiResponse,HttpStatus.OK);
   
     }
 
