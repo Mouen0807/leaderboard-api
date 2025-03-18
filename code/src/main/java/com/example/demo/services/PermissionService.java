@@ -21,35 +21,82 @@ public class PermissionService {
     @Autowired
     private PermissionRepository permissionRepository;
 
-    public List<Permission> findAllPermissions(){
-        return permissionRepository.findAll();
+    public List<PermissionDto> findAllPermissions(){
+        try{
+            List<PermissionDto> permissionsDtos = permissionMapper.convertToDto(permissionRepository.findAll());
+
+            logger.debug("Permissions found");
+            return permissionsDtos;
+        } catch (Exception e) {
+            logger.error("Failed to find permission");
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
-    public PermissionDto createPermission(PermissionDto permissionDto){
+    public Optional<PermissionDto> createPermission(PermissionDto permissionDto){
         try {
             logger.debug("Start saving permission with name: {} ", permissionDto.getName());
+
+            Optional<Permission> optPermission = Optional.ofNullable(permissionRepository.findByName(permissionDto.getName()));
+            if(optPermission.isPresent()){
+                logger.debug("Permission already exists");
+                return Optional.empty();
+            }
 
             Permission permissionToSaved = permissionMapper.convertToEntity(permissionDto);
             Permission permissionSaved = permissionRepository.save(permissionToSaved);
 
             logger.debug("Permission is saved");
-            return permissionMapper.convertToDto(permissionSaved);
+            return Optional.of(permissionMapper.convertToDto(permissionSaved));
         } catch (Exception e) {
             logger.error("Failed to save permission");
             throw new RuntimeException(e.getMessage());
         }
     }
 
-    public Optional<PermissionDto> findPermissionByName(String name){
+    public Optional<PermissionDto> updatePermission(Long id, PermissionDto permissionDto){
         try {
-            logger.debug("Start finding permission by name: {} ", name);
+            logger.debug("Start to update permission id {} ", permissionDto.getId());
 
-            Permission permission = permissionRepository.findByName(name);
+            Optional<Permission> optPermission = permissionRepository.findById(id);
+            if(optPermission.isEmpty()) {
+                logger.debug("Permission not found");
+                return Optional.empty();
+            }
 
-            logger.debug("Permission found");
-            return Optional.ofNullable(permissionMapper.convertToDto(permission));
+            Optional<Permission> optCheckName = Optional.ofNullable(permissionRepository.findByName(permissionDto.getName()));
+            if(optCheckName.isEmpty()){
+                logger.debug("Permission name already exists");
+                return Optional.empty();
+            }
+
+            Permission permissionToUpdate = optPermission.get();
+            permissionToUpdate.setDescription(permissionDto.getDescription());
+            permissionToUpdate.setName(permissionDto.getName());
+            Permission permissionSaved = permissionRepository.save(permissionToUpdate);
+
+            logger.debug("Permission is updated");
+            return Optional.of(permissionMapper.convertToDto(permissionSaved));
         } catch (Exception e) {
-            logger.error("Failed to finds permission");
+            logger.error("Failed to save permission");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Optional<PermissionDto> findPermissionById(Long id){
+        try {
+            logger.debug("Start to find permission with id: {} ", id);
+
+            Optional<Permission> optPermission = permissionRepository.findById(id);
+            if(optPermission.isEmpty()) {
+                logger.debug("Permission not found");
+                return Optional.empty();
+            }
+
+            logger.debug("Permission is found");
+            return Optional.of(permissionMapper.convertToDto(optPermission.get()));
+        } catch (Exception e) {
+            logger.error("Failed to save permission");
             throw new RuntimeException(e.getMessage());
         }
     }

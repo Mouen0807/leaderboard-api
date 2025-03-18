@@ -22,7 +22,7 @@ public class Customer{
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     
-    @Column(unique=true,nullable = false)
+    @Column(unique=true, nullable = false)
     private String login;
 
     @Column(nullable = false)
@@ -31,7 +31,7 @@ public class Customer{
     @OneToOne(cascade = CascadeType.ALL)
     private CustomerDetails customerDetails;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.ALL)
     private Role role;
 
     @CreationTimestamp
@@ -49,39 +49,4 @@ public class Customer{
                 ", role=" + role +
                 '}';
     }
-    /*
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<String> permissionNames = this.role.getPermissions().stream()
-                .map(Permission::getName)  // Extract the 'name' field from each Permission
-                .collect(Collectors.toList());
-
-        return permissionNames.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-    }
-
-    @Override
-    public String getUsername() {
-        return getLogin();
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return false;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return false;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return false;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return false;
-    }
-    */
 }

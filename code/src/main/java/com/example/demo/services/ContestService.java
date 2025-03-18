@@ -6,6 +6,7 @@ import com.example.demo.models.Contest;
 import com.example.demo.models.Customer;
 import com.example.demo.repositories.ContestRepository;
 import com.example.demo.repositories.CustomerRepository;
+import com.example.demo.utils.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class ContestService {
         try {
             logger.debug("start saving contest {}", contestDto);
 
-            if(!isValidUUID(contestDto.getOwner())){
+            if(!Validator.isValidUUID(contestDto.getOwner())){
                 logger.debug("contest owner {} don't exist", contestDto.getOwner());
                 return Optional.empty();
             }
@@ -60,12 +61,5 @@ public class ContestService {
         }
     }
 
-    public static boolean isValidUUID(String uuidStr) {
-        try {
-            UUID uuid = UUID.fromString(uuidStr);  // Try parsing the string to a UUID
-            return true;  // If no exception is thrown, it's valid
-        } catch (IllegalArgumentException e) {
-            return false;  // If an exception is thrown, it's not valid
-        }
-    }
+
 }

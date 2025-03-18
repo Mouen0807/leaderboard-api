@@ -17,6 +17,7 @@ public class RoleMapperImpl implements RoleMapper{
                 .collect(Collectors.toList());
 
         RoleDto roleDto = RoleDto.builder()
+                .id(role.getId())
                 .name(role.getName())
                 .permissions(permissionNames)
                 .build();
