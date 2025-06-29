@@ -1,5 +1,6 @@
 package com.example.demo.dtos;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Getter
@@ -8,7 +9,10 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class JwtTokenDto {
+    @NotBlank(message = "accessToken must not be blank")
     private String accessToken;
+
+    @NotBlank(message = "refreshTokn must not be blank")
     private String refreshToken;
 
     @Override

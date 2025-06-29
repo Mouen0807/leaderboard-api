@@ -1,10 +1,7 @@
 package com.example.demo.services;
 
-import com.example.demo.dtos.PermissionDto;
 import com.example.demo.dtos.RoleDto;
 import com.example.demo.mappers.RoleMapper;
-import com.example.demo.mappers.RoleMapperImpl;
-import com.example.demo.models.ApiResponse;
 import com.example.demo.models.Permission;
 import com.example.demo.models.Role;
 import com.example.demo.repositories.PermissionRepository;
@@ -12,8 +9,6 @@ import com.example.demo.repositories.RoleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -24,7 +19,9 @@ import java.util.stream.Collectors;
 @Service
 public class RoleService {
     private static final Logger logger = LoggerFactory.getLogger(RoleService.class);
-    private static final RoleMapper roleMapper = new RoleMapperImpl();
+
+    @Autowired
+    private RoleMapper roleMapper;
 
     @Autowired
     private RoleRepository roleRepository;
@@ -50,10 +47,10 @@ public class RoleService {
                     .permissions(optSetPermission.get())
                     .build();
 
-            roleRepository.save(role);
+            Role roleCreated = roleRepository.save(role);
             logger.debug("Role created");
 
-            return Optional.of(roleMapper.convertToDto(role));
+            return Optional.of(roleMapper.convertToDto(roleCreated));
         } catch (Exception e) {
             logger.error("Failed to create role");
             throw new RuntimeException(e.getMessage());
@@ -76,10 +73,10 @@ public class RoleService {
             Role role = optRole.get();
             role.setPermissions(optSetPermission.get());
             role.setName(roleDto.getName());
-            roleRepository.save(role);
+            Role roleUpdated = roleRepository.save(role);
 
             logger.debug("Role updated");
-            return Optional.of(roleMapper.convertToDto(role));
+            return Optional.of(roleMapper.convertToDto(roleUpdated));
         } catch (Exception e) {
             logger.error("Failed to update role");
             throw new RuntimeException(e.getMessage());
@@ -99,7 +96,7 @@ public class RoleService {
                 return Optional.of(roleMapper.convertToDto(optRole.get()));
             }
         } catch (Exception e) {
-            logger.error("Failed to find role");
+            logger.error("Failed to find role by name");
             throw new RuntimeException(e.getMessage());
         }
     }

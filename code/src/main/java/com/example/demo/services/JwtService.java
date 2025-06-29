@@ -1,9 +1,8 @@
 package com.example.demo.services;
 
-import com.auth0.jwt.interfaces.Claim;
 import com.example.demo.dtos.CustomerDto;
 import com.example.demo.dtos.JwtTokenDto;
-import com.example.demo.mappers.JwtTokenMapperImpl;
+import com.example.demo.mappers.JwtTokenMapper;
 import com.example.demo.models.Customer;
 import com.example.demo.models.JwtToken;
 
@@ -11,6 +10,7 @@ import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -24,15 +24,16 @@ public class JwtService {
     private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
     @Value("${application.security.jwt.secret-key}")
-    private String secretKey;
+    public String secretKey;
 
     @Value("${application.security.jwt.expiration}")
-    private long jwtExpiration;
+    public long jwtExpiration;
 
     @Value("${application.security.jwt.refresh-token.expiration}")
-    private long refreshExpiration;
+    public long refreshExpiration;
 
-    private final JwtTokenMapperImpl jwtTokenMapperImpl = new JwtTokenMapperImpl();
+    @Autowired
+    private JwtTokenMapper jwtTokenMapper;
 
     public List<String> extractPermissions(String token){
         DecodedJWT decodedJWT = JWT.decode(token);
@@ -57,7 +58,7 @@ public class JwtService {
         jwtToken.setRefreshToken(generateRefreshToken(customerDto));
         logger.debug("Refresh Token is created");
 
-        return jwtTokenMapperImpl.convertToDto(jwtToken);
+        return jwtTokenMapper.convertToDto(jwtToken);
     }
 
     public String generateAccessToken(

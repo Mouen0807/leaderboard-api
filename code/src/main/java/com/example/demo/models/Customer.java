@@ -31,7 +31,7 @@ public class Customer{
     @OneToOne(cascade = CascadeType.ALL)
     private CustomerDetails customerDetails;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private Role role;
 
     @CreationTimestamp

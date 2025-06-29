@@ -4,8 +4,7 @@ import com.example.demo.dtos.CustomerDetailsDto;
 import com.example.demo.dtos.CustomerDto;
 import com.example.demo.dtos.CustomerLoginDto;
 import com.example.demo.mappers.CustomerDetailsMapper;
-import com.example.demo.mappers.CustomerDetailsMapperImpl;
-import com.example.demo.mappers.CustomerMapperImpl;
+import com.example.demo.mappers.CustomerMapper;
 
 import com.example.demo.models.Role;
 import com.example.demo.repositories.CustomerRepository;
@@ -25,13 +24,19 @@ import java.util.UUID;
 @Service
 public class CustomerService {
     private static final Logger logger = LoggerFactory.getLogger(CustomerService.class);
-    private final CustomerMapperImpl customerMapperImpl = new CustomerMapperImpl();
-    private final CustomerDetailsMapper customerDetailsMapper = new CustomerDetailsMapperImpl();
+
+    @Autowired
+    private CustomerMapper customerMapper;
+
+    @Autowired
+    private CustomerDetailsMapper customerDetailsMapper;
 
     @Autowired
     private RoleRepository roleRepository;
+
     @Autowired
     private CustomerRepository customerRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -43,13 +48,13 @@ public class CustomerService {
 
             if (optCustomer.isPresent()) {
                 logger.debug("Customer found");
-                return Optional.of(customerMapperImpl.convertToDto(optCustomer.get()));
+                return Optional.of(customerMapper.convertToDto(optCustomer.get()));
             }
 
             logger.debug("Customer not found");
             return Optional.empty();
         }catch (Exception e) {
-            logger.error("Failed to find customer");
+            logger.error("Failed to find customer by login");
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -67,39 +72,44 @@ public class CustomerService {
 
             if (optCustomer.isPresent()) {
                 logger.debug("Customer found");
-                return Optional.of(customerMapperImpl.convertToDto(optCustomer.get()));
+                return Optional.of(customerMapper.convertToDto(optCustomer.get()));
             }
 
             logger.debug("Customer not found");
             return Optional.empty();
         }catch (Exception e) {
-            logger.error("Failed to find customer");
+            logger.error("Failed to find customer by guid");
             throw new RuntimeException(e.getMessage());
         }
     }
 
-    public Optional<CustomerDto> updateLogin(String customerGuid, CustomerLoginDto customerLoginDto){
+    public Optional<CustomerDto> updateCustomerLogin(String customerGuid, CustomerLoginDto customerLoginDto){
         try {
             logger.debug("Start to update customer {} using login {}", customerGuid, customerLoginDto);
 
+            if(!Validator.isValidUUID(customerGuid)){
+                logger.debug("Customer not found");
+                return Optional.empty();
+            }
+
             Optional<Customer> optCustomer = customerRepository.findById(UUID.fromString(customerGuid));
 
-            if (optCustomer.isPresent()) {
+            if(optCustomer.isPresent()){
                 Customer customer = optCustomer.get();
                 
                 customer.setLogin(customerLoginDto.getLogin());
-                String customerPasswordEncoded = customer.getPassword();
-                customer.setPassword(passwordEncoder.encode(customerPasswordEncoded));
+                String rawPassword = customerLoginDto.getPassword();
+                customer.setPassword(passwordEncoder.encode(rawPassword));
                 
                 Customer customerSaved = customerRepository.save(customer);
 
                 logger.debug("Customer updated");
-                return Optional.of(customerMapperImpl.convertToDto(customerSaved));
+                return Optional.of(customerMapper.convertToDto(customerSaved));
             }
 
             logger.debug("Customer not found");
             return Optional.empty();
-        }catch (Exception e) {
+        }catch(Exception e){
             logger.error("Failed to update customer");
             throw new RuntimeException(e.getMessage());
         }
@@ -109,6 +119,11 @@ public class CustomerService {
         try {
             logger.debug("Start to update customer {} using role {}", customerGuid, role);
 
+            if(!Validator.isValidUUID(customerGuid)){
+                logger.debug("Customer not found");
+                return Optional.empty();
+            }
+
             Optional<Customer> optCustomer = customerRepository.findById(UUID.fromString(customerGuid));
 
             if (optCustomer.isPresent()) {
@@ -117,7 +132,7 @@ public class CustomerService {
                 Customer customerSaved = customerRepository.save(customer);
 
                 logger.debug("Customer updated");
-                return Optional.of(customerMapperImpl.convertToDto(customerSaved));
+                return Optional.of(customerMapper.convertToDto(customerSaved));
             }
 
             logger.debug("Customer not found");
@@ -132,39 +147,26 @@ public class CustomerService {
         try {
             logger.debug("Start to update customer {} using customerDetails {}", customerGuid, customerDetailsDto);
 
+            if(!Validator.isValidUUID(customerGuid)){
+                logger.debug("Customer not found");
+                return Optional.empty();
+            }
+
             Optional<Customer> optCustomer = customerRepository.findById(UUID.fromString(customerGuid));
 
-            if (optCustomer.isPresent()) {
+            if(optCustomer.isPresent()){
                 Customer customer = optCustomer.get();
                 customer.setCustomerDetails(customerDetailsMapper.convertToEntity(customerDetailsDto));
                 Customer customerSaved = customerRepository.save(customer);
 
                 logger.debug("Customer updated");
-                return Optional.of(customerMapperImpl.convertToDto(customerSaved));
+                return Optional.of(customerMapper.convertToDto(customerSaved));
             }
 
             logger.debug("Customer not found");
             return Optional.empty();
         }catch (Exception e) {
             logger.error("Failed to update customer");
-            throw new RuntimeException(e.getMessage());
-        }
-    }
-
-    public Optional<CustomerDto> saveCustomerWithRole(CustomerDto customerDto, Role role){
-        try {
-            logger.debug("Start saving customer {}", customerDto);
-
-            String customerPassword = customerDto.getPassword();
-            customerDto.setPassword(passwordEncoder.encode(customerPassword));
-
-            Customer customerToSave = customerMapperImpl.convertToEntityWithRole(customerDto, role);
-            Customer customerSaved = customerRepository.save(customerToSave);
-
-            logger.debug("Customer is saved");
-            return Optional.of(customerMapperImpl.convertToDto(customerSaved));
-        } catch (Exception e) {
-            logger.error("Failed to save customer");
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -188,7 +190,8 @@ public class CustomerService {
             String customerPassword = customerDto.getPassword();
             customerDto.setPassword(passwordEncoder.encode(customerPassword));
 
-            Customer customerToSave = customerMapperImpl.convertToEntityWithRole(customerDto, optCheckRole.get());
+            Customer customerToSave = customerMapper.convertToEntity(customerDto);
+            customerToSave.setRole(optCheckRole.get());
             Customer customerSaved = customerRepository.save(customerToSave);
 
             logger.debug("Customer is saved");
@@ -201,21 +204,21 @@ public class CustomerService {
 
     public Optional<CustomerDto> loginCustomer(String login, String rawPassword){
         try {
-            logger.debug("Start to login customer using lgin {}", login);
+            logger.debug("Start to login customer using login {}", login);
 
-            Optional<Customer> customerLoginFound = Optional.ofNullable(customerRepository.findByLogin(login));
+            Optional<Customer> optCustomer = Optional.ofNullable(customerRepository.findByLogin(login));
 
-            if(customerLoginFound.isPresent()){
-                if(passwordEncoder.matches(rawPassword, customerLoginFound.get().getPassword())){
+            if(optCustomer.isPresent()){
+                if(passwordEncoder.matches(rawPassword, optCustomer.get().getPassword())){
                     Optional<CustomerDto> optCustomerDtoFound = Optional.of(
-                            customerMapperImpl.convertToDto(customerLoginFound.get()));
+                            customerMapper.convertToDto(optCustomer.get()));
 
                     logger.debug("Customer is logged successfully");
                     return optCustomerDtoFound;
                 }
             }
 
-            logger.debug("Customer is not logged ");
+            logger.debug("Customer is not logged");
             return Optional.empty();
         } catch (Exception e) {
             logger.error("Failed to log customer");

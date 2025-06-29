@@ -3,7 +3,6 @@ package com.example.demo.controllers;
 import com.example.demo.dtos.JwtTokenDto;
 import com.example.demo.dtos.RoleDto;
 import com.example.demo.mappers.CustomerMapper;
-import com.example.demo.mappers.CustomerMapperImpl;
 import com.example.demo.models.Customer;
 import com.example.demo.models.LoginInput;
 import com.example.demo.services.JwtService;
@@ -12,6 +11,7 @@ import com.example.demo.dtos.CustomerDto;
 import com.example.demo.models.ApiResponse;
 import com.example.demo.services.CustomerService;
 import com.example.demo.services.RoleService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,9 @@ import java.util.Optional;
 @RequestMapping("/api/v1")
 public class AuthenticationController {
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
-    private final CustomerMapper customerMapper = new CustomerMapperImpl();
+
+    @Autowired
+    private CustomerMapper customerMapper;
 
     @Autowired
     private CustomerService customerService;
@@ -40,8 +42,8 @@ public class AuthenticationController {
     private RoleService roleService;
 
     @PostMapping("/auth/create")
-    public ResponseEntity<?> saveCustomer(@RequestBody CustomerDto customerDto) {
-        logger.info("Attempt to create customer with login: {} ", customerDto.getLogin());
+    public ResponseEntity<?> saveCustomer(@Valid  @RequestBody CustomerDto customerDto) {
+        logger.info("Attempt to create customer with login: {} ", customerDto);
 
         Optional<Customer> optCustomerSaved = customerService.saveCustomer(customerDto);
         if(optCustomerSaved.isEmpty()){
@@ -104,7 +106,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/auth/logout")
-    public ResponseEntity<?> logoutCustomer(@RequestBody JwtTokenDto jwtTokenDto) {
+    public ResponseEntity<?> logoutCustomer(@Valid @RequestBody JwtTokenDto jwtTokenDto) {
         logger.info("Attempt to logout a customer");
 
         if(jwtService.isTokenExpired(jwtTokenDto.getAccessToken())){
