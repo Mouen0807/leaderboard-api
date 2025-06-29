@@ -3,6 +3,7 @@ package com.example.demo.controllers;
 import com.example.demo.dtos.RoleDto;
 import com.example.demo.models.ApiResponse;
 import com.example.demo.services.RoleService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ public class RoleController {
     private RoleService roleService;
 
     @PostMapping("/role/create")
-    public ResponseEntity<?> createRole(@RequestBody RoleDto roleDto) {
+    public ResponseEntity<?> createRole(@Valid @RequestBody RoleDto roleDto) {
         logger.info("Attempt to create role {}", roleDto.toString());
 
         Optional<RoleDto> optRoleDtoCreated = roleService.createRole(roleDto);
@@ -47,7 +48,7 @@ public class RoleController {
     }
 
     @GetMapping("/role")
-    public ResponseEntity<?> findRoleByName(@RequestParam String name) {
+    public ResponseEntity<?> findRoleByName(@RequestParam("name") String name) {
         logger.info("Attempt to find role with name: {} ", name);
 
         Optional<RoleDto> optRoleDto  = roleService.findRoleByName(name);
@@ -72,7 +73,7 @@ public class RoleController {
     }
     
     @PutMapping("/role/update/{id}")
-    public ResponseEntity<?> updateRole(@PathVariable Long id, @RequestBody RoleDto roleDto) {
+    public ResponseEntity<?> updateRole(@PathVariable("id") Long id, @Valid  @RequestBody RoleDto roleDto) {
         logger.info("Attempt to update role id {} with values {}", id, roleDto.toString());
 
         Optional<RoleDto> optRoleDtoUpdated = roleService.updateRole(id, roleDto);

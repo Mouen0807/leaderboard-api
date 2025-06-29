@@ -1,6 +1,7 @@
 package com.example.demo.dtos;
 
 import com.example.demo.models.CustomerDetails;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Getter
@@ -10,9 +11,11 @@ import lombok.*;
 @NoArgsConstructor
 public class CustomerDto {
     private String id;
+    @NotBlank(message = "login must not be blank")
     private String login;
     private String password;
     private CustomerDetailsDto customerDetails;
+    @NotBlank(message = "role must not be blank")
     private String role;
     private String createdAt;
     private String updatedAt;

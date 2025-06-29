@@ -2,7 +2,6 @@ package com.example.demo.services;
 
 import com.example.demo.dtos.PermissionDto;
 import com.example.demo.mappers.PermissionMapper;
-import com.example.demo.mappers.PermissionMapperImpl;
 import com.example.demo.models.Permission;
 import com.example.demo.repositories.PermissionRepository;
 import org.slf4j.Logger;
@@ -16,7 +15,9 @@ import java.util.Optional;
 @Service
 public class PermissionService {
     private static final Logger logger = LoggerFactory.getLogger(PermissionService.class);
-    private static final PermissionMapper permissionMapper = new PermissionMapperImpl();
+
+    @Autowired
+    private PermissionMapper permissionMapper;
 
     @Autowired
     private PermissionRepository permissionRepository;
@@ -39,12 +40,12 @@ public class PermissionService {
 
             Optional<Permission> optPermission = Optional.ofNullable(permissionRepository.findByName(permissionDto.getName()));
             if(optPermission.isPresent()){
-                logger.debug("Permission already exists");
+                logger.debug("Permission name   already exists : {} ",optPermission.get());
                 return Optional.empty();
             }
 
-            Permission permissionToSaved = permissionMapper.convertToEntity(permissionDto);
-            Permission permissionSaved = permissionRepository.save(permissionToSaved);
+            Permission permissionToSave = permissionMapper.convertToEntity(permissionDto);
+            Permission permissionSaved = permissionRepository.save(permissionToSave);
 
             logger.debug("Permission is saved");
             return Optional.of(permissionMapper.convertToDto(permissionSaved));
@@ -56,17 +57,11 @@ public class PermissionService {
 
     public Optional<PermissionDto> updatePermission(Long id, PermissionDto permissionDto){
         try {
-            logger.debug("Start to update permission id {} ", permissionDto.getId());
+            logger.debug("Start to update permission id {} with data {}",id, permissionDto);
 
             Optional<Permission> optPermission = permissionRepository.findById(id);
             if(optPermission.isEmpty()) {
                 logger.debug("Permission not found");
-                return Optional.empty();
-            }
-
-            Optional<Permission> optCheckName = Optional.ofNullable(permissionRepository.findByName(permissionDto.getName()));
-            if(optCheckName.isEmpty()){
-                logger.debug("Permission name already exists");
                 return Optional.empty();
             }
 
@@ -96,7 +91,7 @@ public class PermissionService {
             logger.debug("Permission is found");
             return Optional.of(permissionMapper.convertToDto(optPermission.get()));
         } catch (Exception e) {
-            logger.error("Failed to save permission");
+            logger.error("Failed to find permission");
             throw new RuntimeException(e.getMessage());
         }
     }

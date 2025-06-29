@@ -17,6 +17,7 @@ import java.util.UUID;
 @Service
 public class ContestService {
     private static final Logger logger = LoggerFactory.getLogger(ContestService.class);
+
     private final ContestRepository contestRepository;
     private final CustomerRepository customerRepository;
     private final ContestMapperImpl contestMapperImpl = new ContestMapperImpl();

@@ -29,7 +29,7 @@ public class Contest{
     private Boolean isStopped;
     private Long durationInSeconds;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     private Customer owner;
 
     @CreationTimestamp

@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.ValidationAnnotationUtils.*;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -35,7 +34,7 @@ public class CustomerController {
     private JwtService jwtService;
 
     @GetMapping("/customer/infos")
-    public ResponseEntity<?> getcustomerInfos(@RequestParam String login) {
+    public ResponseEntity<?> getcustomerInfos(@RequestParam("login")  String login) {
         logger.info("Attempt to get customer infos for login: {} ", login);
         Optional<CustomerDto> optCustomerDto  = customerService.findCustomerByLogin(login);
 
@@ -59,8 +58,8 @@ public class CustomerController {
         return new ResponseEntity<>(apiResponse,HttpStatus.OK);
     }
 
-    @PutMapping("/customer/updateLogin/{customerGuid}")
-    public ResponseEntity<?> updateCustomer(@Valid @RequestBody CustomerLoginDto customerLoginDto, @PathVariable String customerGuid) {
+    @PutMapping("/customer/updateCustomerLogin/{customerGuid}")
+    public ResponseEntity<?> updateCustomer(@Valid @RequestBody CustomerLoginDto customerLoginDto, @PathVariable("customerGuid") String customerGuid) {
         logger.info("Attempt to update customer login with id: {} by values {}", customerGuid, customerLoginDto);
 
         Optional<CustomerDto> optCheckLogin = customerService.findCustomerByLogin(customerLoginDto.getLogin());
@@ -75,7 +74,7 @@ public class CustomerController {
             return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
         }
 
-        Optional<CustomerDto> optCustomerSaved = customerService.updateLogin(customerGuid, customerLoginDto);
+        Optional<CustomerDto> optCustomerSaved = customerService.updateCustomerLogin(customerGuid, customerLoginDto);
 
         if(optCustomerSaved.isEmpty()){
             ApiResponse<CustomerLoginDto> apiResponse = ApiResponse.<CustomerLoginDto>builder()
@@ -98,7 +97,7 @@ public class CustomerController {
     }
 
     @PutMapping("/customer/updateDetails/{customerGuid}")
-    public ResponseEntity<?> updateDetails(@Valid @RequestBody CustomerDetailsDto customerDetailsDto, @PathVariable String customerGuid) {
+    public ResponseEntity<?> updateDetails(@Valid @RequestBody CustomerDetailsDto customerDetailsDto, @PathVariable("customerGuid") String customerGuid) {
         logger.info("Attempt to update customer details with id: {} by values {}", customerGuid, customerDetailsDto);
 
         Optional<CustomerDto> optCustomerSaved = customerService.updateCustomerDetails(customerGuid, customerDetailsDto);
@@ -124,7 +123,7 @@ public class CustomerController {
     }
 
     @PutMapping("/customer/updateRole/{customerGuid}")
-    public ResponseEntity<?> updateRole(@NotNull @RequestParam String role, @PathVariable String customerGuid){
+    public ResponseEntity<?> updateRole(@NotNull @RequestParam("role") String role, @PathVariable("customerGuid") String customerGuid){
         logger.info("Attempt to update customer id: {} by role {}", customerGuid, role);
 
         Optional<Role> optcheckRole = roleService.findEntityRoleByName(role);

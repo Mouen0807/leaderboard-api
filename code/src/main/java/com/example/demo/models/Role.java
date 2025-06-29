@@ -23,7 +23,7 @@ public class Role {
 
     private String name;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.EAGER)
     private Set<Permission> permissions;
 
     public List<String> getPermissionNames(){
